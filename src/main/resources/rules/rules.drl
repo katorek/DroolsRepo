@@ -7,6 +7,19 @@ import com.drools.wypozyczalnia.Samochod
 import com.drools.wypozyczalnia.KlasaSamochodu
 import com.drools.wypozyczalnia.Klient
 
+
+/*
+    Klient
+        (boolean lojalnosciowy,
+        ,
+        ,
+        ,
+        ,
+        ,
+        )
+*/
+
+
 rule "Init"
 	when
 	then
@@ -16,8 +29,14 @@ rule "Init"
 		insert(new Samochod(KlasaSamochodu.D));
 		insert(new Samochod(KlasaSamochodu.D));
 
-		insert(new  Klient(false, KlasaSamochodu.BRAK,"11/11/2015","12/11/2015",new String[]{"fotelik","bagaznik"}));
-//		System.out.println("XD");
+        Klient k1 = new Klient(false,KlasaSamochodu.BRAK,
+            "11/11/2015","12/11/2015",new String[]{"fotelik","bagaznik"},
+            "12/11/2015",0,
+            0,false);
+
+        insert(k1);
+//		insert(new  Klient(false, KlasaSamochodu.BRAK,"11/11/2015","12/11/2015",new String[]{"fotelik","bagaznik"}));
+
 //
 //		insert(new Relacja(maria,marek,"rodzic"));
 
@@ -31,4 +50,22 @@ rule "Auto"
 		samochod.setInited(true);
 		update(samochod);
 
+end
+
+rule "Klient zwrocil o czasie"
+//    double suma;
+//    int iloscDni;
+    when
+        klient: Klient(!isInited() && getDataZwrotu()==getWynajemDo())
+//        suma: double,
+//        iloscDni: int
+    then
+        suma = 0;
+        iloscDni = klient.getIloscDni();
+        suma += klient.getPreferencjaSamochodu().getCena(iloscDni);
+        System.out.println("Klient zwrocil o czasie, cena: "+suma);
+//        klient.setInited(true);
+
+
+        update(klient);
 end

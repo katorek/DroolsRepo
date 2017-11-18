@@ -51,4 +51,12 @@ public enum KlasaSamochodu {
     public String toString() {
         return skrot;
     }
+
+    public double getCena(int iloscDni) {
+        if(iloscDni>3){
+            return iloscDni * powyzej3Dni;
+        }else{
+            return iloscDni * ponizej3Dni;
+        }
+    }
 }

@@ -14,14 +14,15 @@ import com.drools.wypozyczalnia.Mutex;
 rule "Init"
 	when
 	then
-
+        System.out.println();
+        System.out.println("--------------------------------------------------------");
 end
 
 rule "Auto"
 	when
 		samochod: Samochod(!isInited())
 	then
-		System.out.println("Zarejestrowany nowy samochod klasy "+ samochod.getKlasaSamochodu());
+//		System.out.println("Zarejestrowany nowy samochod klasy "+ samochod.getKlasaSamochodu());
 		samochod.setInited(true);
 //        auta.add(samochod);
 //        update(auta);
@@ -105,9 +106,7 @@ rule "Klient 9a LICZENIE_DODATKOW, klient lojalnosciowy"
     then
 //        System.err.print("9a -> ");
         k.setStan(Stan.LICZENIE_OPLAT_ZA_KOLPAKI);
-        System.out.println(k.getCenaWypozyczenie());
         k.dodajDoCeny(10*((k.getIloscDodatkow()> 1 ) ? (k.getIloscDodatkow()-1): 0));
-        System.out.println(k.getCenaWypozyczenie());
         update(k);
 end
 
@@ -192,7 +191,6 @@ rule "Klient 4c SZUKANIE_AUTA, danie klasy wyzej -> repeat"
 //        k.setPreferencjaSamochodu(KlasaSamochodu.wyzszaKlasa(k.getPreferencjaSamochodu()));
         update(k);
 end
-
 
 rule "Klient 4a SZUKANIE_AUTA, danie klasy wyzej -> repeat"
     when

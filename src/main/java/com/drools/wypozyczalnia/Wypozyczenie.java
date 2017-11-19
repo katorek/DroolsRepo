@@ -13,7 +13,8 @@ public class Wypozyczenie {
     private static SimpleDateFormat myFormat = new SimpleDateFormat("dd/MM/yyyy");
 
     Wypozyczenie(Klient k, Samochod s) {
-        this(k.getWynajemOd(), k.getWynajemDo(),s);
+        this(k.getWynajemOd(), k.getWynajemDo(), s);
+        this.klient = k;
     }
 
     private static Date parseStringToDate(String string) {
@@ -35,7 +36,7 @@ public class Wypozyczenie {
 ////        return (s1.before(e2) || s1.equals(e2)) && (s2.before(e1) || s2.equals(e1)); //ten sam dzien -> nachodza sie
 //    }
 
-    private static boolean datySieNachodza(Date s1, Date e1, Date s2, Date e2){
+    private static boolean datySieNachodza(Date s1, Date e1, Date s2, Date e2) {
         return s1.before(e2) && s2.before(e1);
     }
 
@@ -43,11 +44,6 @@ public class Wypozyczenie {
         this.dataOd = dataOd;
         this.dataDo = dataDo;
         this.samochod = samochod;
-    }
-
-    Wypozyczenie(Date dataOd, Date dataDo, Samochod samochod, Klient klient){
-        this(dataOd, dataDo, samochod);
-        this.klient = klient;
     }
 
     Samochod getSamochod() {
@@ -86,10 +82,21 @@ public class Wypozyczenie {
         return auto1.equals(auto2) && datySieNachodza(e.dataOd, e.dataDo, s1, e1);
     }
 
-    static boolean czyKlientJuzZarezerwowalWterminie(Wypozyczenie w, Klient k, Date s1, Date s2){
-        return w.getKlient().getId() == k.getId() && datySieNachodza(s1,s2,w.dataOd,w.dataDo);
+    static boolean czyKlientJuzZarezerwowalWterminie(Wypozyczenie w, Klient k, Date s1, Date s2) {
+        return w.getKlient().getId() == k.getId() && datySieNachodza(s1, s2, w.dataOd, w.dataDo);
     }
-//    public static boolean datySieNachodza(Wypozyczenie e, Date s1, Date e1) {
+
+    @Override
+    public String toString() {
+        return "Wypozyczenie{" +
+                "dataOd=" + dataOd +
+                ", dataDo=" + dataDo +
+                ", samochod=" + samochod +
+                ", klient=" + klient +
+                '}';
+    }
+
+    //    public static boolean datySieNachodza(Wypozyczenie e, Date s1, Date e1) {
 //        return datySieNachodza(e.dataOd, e.dataDo, s1, e1);
 //    }
 }

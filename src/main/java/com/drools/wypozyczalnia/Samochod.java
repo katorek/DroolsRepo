@@ -2,7 +2,6 @@ package com.drools.wypozyczalnia;
 
 public class Samochod {
     private KlasaSamochodu klasaSamochodu;
-    private Wypozyczenie wypozyczenie;
     private boolean zajety;
     private boolean inited;
 

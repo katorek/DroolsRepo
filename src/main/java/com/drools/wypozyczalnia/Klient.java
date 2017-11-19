@@ -88,7 +88,8 @@ public class Klient {
         this.wynajemDo = parseStringToDate(dataDo);
         this.dataZwrotu = parseStringToDate(dataZwrotu);
         this.iloscDodatkow = dodatki.length;
-        this.iloscDni = iloscDni(wynajemOd, this.dataZwrotu);
+        this.iloscDni = iloscDni(wynajemOd, wynajemDo);
+
         this.iloscPrzejechanychKm = iloscPrzejechanychKm;
         this.iloscZbugionychKolpakow = iloscZgubionychKolpakow;
         this.zgubionyDowod = zgubionyDowod;

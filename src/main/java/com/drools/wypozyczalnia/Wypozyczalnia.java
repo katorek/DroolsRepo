@@ -28,10 +28,14 @@ public class Wypozyczalnia {
     }
 
     public boolean czyKlientJuzMaRezerwacjeNaDanyTermin(Klient k, Date s1, Date e1) {
-        return wypozyczenia.stream().anyMatch(e -> Wypozyczenie.czyKlientJuzZarezerwowalWterminie(e, k, s1, e1));
+        return wypozyczenia
+                .stream()
+                .anyMatch(e ->
+                        Wypozyczenie.czyKlientJuzZarezerwowalWterminie(e, k, s1, e1));
     }
 
     public void addWypozyczenie(Klient k, Samochod s) {
         wypozyczenia.add(new Wypozyczenie(k, s));
     }
+
 }

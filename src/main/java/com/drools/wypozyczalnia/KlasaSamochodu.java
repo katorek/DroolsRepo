@@ -33,7 +33,7 @@ public enum KlasaSamochodu {
             case D:
                 return ERROR;
         }
-        return null;
+        return ERROR;
     }
 
     public String getTyp() {

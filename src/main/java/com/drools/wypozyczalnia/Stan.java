@@ -1,0 +1,19 @@
+package com.drools.wypozyczalnia;
+
+public enum Stan {
+    INICJALIZACJA, //1
+    USTALANIE_PREFERENCJI, //2
+    SPRAWDZENIE_CZY_MOZE_WYPOZYCZYC, //3
+    SZUKANIE_AUTA, //4
+    AUTO_USTALONE, //5
+    LICZENIE_DNI, //6, podstawowe opalty
+    LICZENIE_NADPLATY_ZA_DNI, //7
+    LICZENIE_KM, //8
+    LICZENIE_DODATKOW, //9
+    LICZENIE_OPLAT_ZA_KOLPAKI, //10
+    LICZENIE_OPLAT_ZA_DOWOD, //11
+    PODSUMOWANIE, //12
+    KONIEC,//13
+    JUZ_MA_ZAREZERWOWANE_AUTO, //14
+    CZEKAJ
+}

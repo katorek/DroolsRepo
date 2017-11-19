@@ -1,44 +1,20 @@
 package com.drools.example
 
-import com.drools.example.HelloWorldTest.Osoba
-import com.drools.example.HelloWorldTest.Plec
-import com.drools.example.HelloWorldTest.Relacja
 import com.drools.wypozyczalnia.Samochod
 import com.drools.wypozyczalnia.KlasaSamochodu
 import com.drools.wypozyczalnia.Klient
-
-
-/*
-    Klient
-        (boolean lojalnosciowy,
-        ,
-        ,
-        ,
-        ,
-        ,
-        )
-*/
-
+import java.util.List
+import java.util.ArrayList
+import org.drools.core.WorkingMemory
+import com.drools.wypozyczalnia.Main
+import com.drools.wypozyczalnia.Wypozyczalnia;
+import com.drools.wypozyczalnia.Stan;
+import com.drools.wypozyczalnia.Mutex;
 
 rule "Init"
 	when
 	then
-		insert(new Samochod(KlasaSamochodu.A));
-		insert(new Samochod(KlasaSamochodu.A));
-		insert(new Samochod(KlasaSamochodu.B));
-		insert(new Samochod(KlasaSamochodu.D));
-		insert(new Samochod(KlasaSamochodu.D));
-
-        Klient k1 = new Klient(false,KlasaSamochodu.BRAK,
-            "11/11/2015","12/11/2015",new String[]{"fotelik","bagaznik"},
-            "12/11/2015",0,
-            0,false);
-
-        insert(k1);
-//		insert(new  Klient(false, KlasaSamochodu.BRAK,"11/11/2015","12/11/2015",new String[]{"fotelik","bagaznik"}));
-
-//
-//		insert(new Relacja(maria,marek,"rodzic"));
+	    insert(new Mutex());
 
 end
 
@@ -48,24 +24,241 @@ rule "Auto"
 	then
 		System.out.println("Zarejestrowany nowy samochod klasy "+ samochod.getKlasaSamochodu());
 		samochod.setInited(true);
+//        auta.add(samochod);
+//        update(auta);
 		update(samochod);
 
 end
 
-rule "Klient zwrocil o czasie"
-//    double suma;
-//    int iloscDni;
+//rule "Klient 1b INICJALIZACJA, musi czekac"
+//    when
+////        m: Mutex(getVal()==1)
+//        w: Wypozyczalnia(true)
+//        k: Klient(getStan()==Stan.INICJALIZACJA)
+//    then
+//        k.setStan(Stan.INICJALIZACJA);
+//        update(k);
+//end
+
+rule "Klient 1 INICJALIZACJA"
+ruleflow-group "group1"
     when
-        klient: Klient(!isInited() && getDataZwrotu()==getWynajemDo())
-//        suma: double,
-//        iloscDni: int
+//        m: Mutex(getVal()==0)
+        w: Wypozyczalnia(true)
+        k: Klient(getStan()==Stan.INICJALIZACJA)
     then
-        suma = 0;
-        iloscDni = klient.getIloscDni();
-        suma += klient.getPreferencjaSamochodu().getCena(iloscDni);
-        System.out.println("Klient zwrocil o czasie, cena: "+suma);
-//        klient.setInited(true);
-
-
-        update(klient);
+//        m.lock();
+//        update(m);
+//        System.err.print("1 -> ");
+        k.setStan(Stan.USTALANIE_PREFERENCJI);
+        update(k);
 end
+
+rule "Klient 2a USTALANIE_PREFERENCJI: brak->A"
+ruleflow-group "group1"
+    when
+        w: Wypozyczalnia(true)
+        k: Klient(getStan()==Stan.USTALANIE_PREFERENCJI && getPreferencjaSamochodu()==KlasaSamochodu.BRAK)
+    then
+//        System.err.print("2a -> ");
+        k.setFaktyczneAuto(KlasaSamochodu.A);
+        k.setPreferencjaSamochodu(KlasaSamochodu.A);
+        update(k);
+end
+
+rule "Klient 2b USTALANIE_PREFERENCJI"
+ruleflow-group "group1"
+    when
+        w: Wypozyczalnia(true)
+        k: Klient(getStan()==Stan.USTALANIE_PREFERENCJI)
+    then
+//        System.err.print("2b -> ");
+        k.setStan(Stan.SPRAWDZENIE_CZY_MOZE_WYPOZYCZYC);
+        update(k);
+end
+
+rule "Klient 3a SPRAWDZENIE_CZY_MOZE_WYPOZYCZYC, moze"
+ruleflow-group "group1"
+    when
+        w: Wypozyczalnia(true)
+        k: Klient(getStan()==Stan.SPRAWDZENIE_CZY_MOZE_WYPOZYCZYC && !w.czyKlientJuzMaRezerwacjeNaDanyTermin(k,k.wynajemOd,k.wynajemDo))
+    then
+        k.setStan(Stan.SZUKANIE_AUTA);
+        update(k);
+end
+
+rule "Klient 3b SPRAWDZENIE_CZY_MOZE_WYPOZYCZYC, nie moze"
+ruleflow-group "group1"
+    when
+        w: Wypozyczalnia(true)
+        k: Klient(getStan()==Stan.SPRAWDZENIE_CZY_MOZE_WYPOZYCZYC && w.czyKlientJuzMaRezerwacjeNaDanyTermin(k,k.wynajemOd,k.wynajemDo))
+    then
+        System.err.print("3b -> ");
+        k.setStan(Stan.JUZ_MA_ZAREZERWOWANE_AUTO);
+        update(k);
+end
+
+rule "Klient 4 SZUKANIE_AUTA, rezerwacja auta"
+ruleflow-group "group1"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.SZUKANIE_AUTA)
+        s: Samochod(getKlasaSamochodu()==k.getPreferencjaSamochodu() && w.canAutoBeBorrowed(s,k.wynajemOd, k.wynajemDo))
+    then
+//        System.err.print("4 -> ");
+        w.addWypozyczenie(k,s);
+        k.setStan(Stan.AUTO_USTALONE);
+        update(w);
+        update(k);
+end
+
+rule "Klient 4a SZUKANIE_AUTA, danie klasy wyzej -> repeat"
+ruleflow-group "group1"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.SZUKANIE_AUTA)
+        s: Samochod(getKlasaSamochodu()!=k.getPreferencjaSamochodu() && w.canAutoBeBorrowed(s,k.wynajemOd, k.wynajemDo))
+    then
+//        System.err.println("Zmiana klasy z \'"+k.getPreferencjaSamochodu() + "\' na \'"+KlasaSamochodu.wyzszaKlasa(k.getPreferencjaSamochodu())+"\'");
+//        System.err.print("4a -> ");
+        k.setPreferencjaSamochodu(KlasaSamochodu.wyzszaKlasa(k.getPreferencjaSamochodu()));
+        update(k);
+end
+
+rule "Klient 5 AUTO_USTALONE"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.AUTO_USTALONE)
+    then
+//        System.err.print("5 -> ");
+        k.setStan(Stan.LICZENIE_DNI);
+        update(k);
+end
+
+rule "Klient 6 LICZENIE_DNI, podstawowe oplaty za ilosc dni wynajmu"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.LICZENIE_DNI)
+    then
+//        System.err.print("6 -> ");
+        k.setStan(Stan.LICZENIE_NADPLATY_ZA_DNI);
+        k.setCenaWypozyczenie(k.getFaktyczneAuto().getCena(k.getIloscDni()));
+        update(k);
+end
+
+rule "Klient 7 LICZENIE_NADPLATY_ZA_DNI, liczenie opcjonalnych oplat za dodatkowe dni"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.LICZENIE_NADPLATY_ZA_DNI)
+    then
+//        System.err.print("7 -> ");
+        k.setStan(Stan.LICZENIE_KM);
+        Integer iloscDodatkowychDni = k.getIloscDodatkowychDni();
+
+        k.dodajDoCenyOddania(iloscDodatkowychDni * 3 * k.getFaktyczneAuto().getPowyzej3Dni()); //3krotnosc ktorej stawki ? 1-3 czy +3
+//        k.setCenaWypozyczenie(k.getFaktyczneAuto().getCenaWypozyczenie(k.getIloscDni()));
+        update(k);
+end
+
+rule "Klient 8a LICZENIE_KM, liczenie oplaty za przejechane km, 1-3 dni wynajmu"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.LICZENIE_KM && ( getIloscDodatkowychDni() + getIloscDni() ) < 4 )
+    then
+//        System.err.print("8a -> ");
+        k.setStan(Stan.LICZENIE_DODATKOW);
+        k.dodajDoCenyOddania(k.getIloscPrzejechanychKm());
+        update(k);
+end
+
+rule "Klient 8b LICZENIE_KM, liczenie oplaty za przejechane km, 3+ dni wynajmu"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.LICZENIE_KM && ( getIloscDodatkowychDni() + getIloscDni() ) > 3 )
+    then
+//        System.err.print("8b -> ");
+        k.setStan(Stan.LICZENIE_DODATKOW);
+        k.dodajDoCenyOddania(k.getIloscPrzejechanychKm()*0.5);
+        update(k);
+end
+
+rule "Klient 9a LICZENIE_DODATKOW, klient lojalnosciowy"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.LICZENIE_DODATKOW && isKlientLojalnosciowy())
+    then
+//        System.err.print("9a -> ");
+        k.setStan(Stan.LICZENIE_OPLAT_ZA_KOLPAKI);
+        k.dodajDoCeny(10*((k.getIloscDodatkow()> 1 ) ? (k.getIloscDodatkow()-1): 0));
+        update(k);
+end
+
+rule "Klient 9b LICZENIE_DODATKOW, klient nielojalnosciowy"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.LICZENIE_DODATKOW && !isKlientLojalnosciowy())
+    then
+//        System.err.print("9b -> ");
+        k.setStan(Stan.LICZENIE_OPLAT_ZA_KOLPAKI);
+        k.dodajDoCeny(10*k.getIloscDodatkow());
+        update(k);
+end
+
+rule "Klient 10 LICZENIE_OPLAT_ZA_KOLPAKI"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.LICZENIE_OPLAT_ZA_KOLPAKI)
+    then
+//        System.err.print("10 -> ");
+
+        k.setStan(Stan.LICZENIE_OPLAT_ZA_DOWOD);
+        k.dodajDoCeny(20*k.getIloscZbugionychKolpakow());
+        update(k);
+end
+
+rule "Klient 11 LICZENIE_OPLAT_ZA_DOWOD, tak, 500 zl za zgubiony dowod"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.LICZENIE_OPLAT_ZA_DOWOD && isZgubionyDowod())
+    then
+//        System.err.print("11a -> ");
+        k.setStan(Stan.PODSUMOWANIE);
+        k.dodajDoCenyOddania(500);
+        update(k);
+end
+
+rule "Klient 11 LICZENIE_OPLAT_ZA_DOWOD, nie"
+    when
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.LICZENIE_OPLAT_ZA_DOWOD && !isZgubionyDowod())
+    then
+//        System.err.print("11b -> ");
+        k.setStan(Stan.PODSUMOWANIE);
+        update(k);
+end
+
+rule "Klient 12 PODSUMOWANIE"
+
+    when
+        m: Mutex()
+        w: Wypozyczalnia()
+        k: Klient(getStan()==Stan.PODSUMOWANIE)
+    then
+        m.unlock();
+//        System.err.println("12 !");
+        Double wyp = k.getCenaWypozyczenie();
+        Double odd = k.getCenaOddania();
+        Double suma= wyp + odd;
+
+        System.out.println("SUMA wypożyczenie: "+wyp+", SUMA oddanie: "+odd+", SUMA: "+suma);
+        k.setStan(Stan.KONIEC);
+        update(k);
+end
+
+rule "Klient 14 JUZ_MA_ZAREZERWOWANE_AUTO"
+    when
+        k: Klient(getStan()==Stan.JUZ_MA_ZAREZERWOWANE_AUTO)
+    then
+        System.err.println("Nie mozna wypozyczyc !");
+end
+

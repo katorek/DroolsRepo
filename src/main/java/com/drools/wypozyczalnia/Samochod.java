@@ -2,6 +2,7 @@ package com.drools.wypozyczalnia;
 
 public class Samochod {
     private KlasaSamochodu klasaSamochodu;
+    private Wypozyczenie wypozyczenie;
     private boolean zajety;
     private boolean inited;
 
@@ -35,4 +36,6 @@ public class Samochod {
     public void setKlasaSamochodu(KlasaSamochodu klasaSamochodu) {
         this.klasaSamochodu = klasaSamochodu;
     }
+
+
 }
